@@ -407,13 +407,16 @@ async function init() {
     state.moduleDir = info.moduleDir;
     state.scriptPath = `${state.moduleDir}/bin/bl_flasher.sh`;
 
-    // 读取安装时保存的语言
     let defLang = "zh";
-    try{
-      let res = exec("ksud module config get user_lang");
-      res = res.trim();
-      if(res === "en") defLang = "en";
-    }catch(e){}
+    try {
+      const res = await fetch(`/lang.txt`);
+      if (res.ok) {
+        const txt = await res.text();
+        defLang = txt.trim() === "en" ? "en" : "zh";
+      }
+    } catch (e) {
+
+    }
 
     applyLanguage(defLang);
 
