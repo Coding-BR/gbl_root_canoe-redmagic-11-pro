@@ -18,6 +18,7 @@ const DecodeFunc g_decoders[] = {
     decode_inst_cmp_w_imm,
     decode_inst_ubfm_w,
     decode_inst_cbz_cbnz,
+    decode_inst_bcond,
 };
 const int32_t g_num_decoders = (int32_t)(sizeof(g_decoders) / sizeof(g_decoders[0]));
 int32_t decode_imm19(uint32_t raw) {
@@ -250,6 +251,15 @@ bool decode_inst_cbz_cbnz(uint32_t raw, DecodedInst* out) {
     return true;
 }
 
+bool decode_inst_bcond(uint32_t raw, DecodedInst* out) {
+    if ((raw & 0xFF000010) != 0x54000000) return false;
+    out->type = INST_BCOND;
+    out->raw  = raw;
+    out->cond = raw & 0xF;
+    out->simm = decode_imm19(raw);
+    return true;
+}
+
 bool get_JUMP_target(DecodedInst* inst, int64_t instoff, int64_t* target) {
     switch (inst->type) {
         case INST_B:
@@ -258,6 +268,7 @@ bool get_JUMP_target(DecodedInst* inst, int64_t instoff, int64_t* target) {
         case INST_CBZ_X:
         case INST_CBNZ_W:
         case INST_CBNZ_X:
+        case INST_BCOND:
             *target = instoff + inst->simm;
             return true;
         default:
@@ -266,6 +277,11 @@ bool get_JUMP_target(DecodedInst* inst, int64_t instoff, int64_t* target) {
 }
 uint32_t change_rt(DecodedInst* inst, uint8_t new_rt) {
     return (inst->raw & ~0x1Fu) | (new_rt & 0x1Fu);
+}
+uint32_t change_to_b(uint32_t raw) {
+    int32_t imm19 = (int32_t)((raw >> 5) & 0x7FFFF);
+    if (imm19 & 0x40000) imm19 |= (int32_t)0xFFF80000;
+    return 0x14000000u | ((uint32_t)imm19 & 0x03FFFFFFu);
 }
 /* 解码优先级表 —— 按照编码空间重叠度排序 */
 DecodedInst decode_inst(uint32_t raw) {

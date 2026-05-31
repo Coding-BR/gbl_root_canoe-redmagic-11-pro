@@ -42,6 +42,7 @@ typedef enum {
     INST_UBFM_W,            /* UBFM Wd, Wn, #r, #s          */
     INST_CBNZ_X,            /* CBNZ Xt, label                */
     INST_CBZ_X,             /* CBZ Xt, label                 */
+    INST_BCOND,             /* B.cond label (B.EQ/NE/LT/GE…) */
 } InstType;
 #define NOP 0xD503201F  /* NOP is an alias for HINT #0x1F */
 typedef struct {
@@ -113,8 +114,13 @@ bool decode_inst_ubfm_w(uint32_t raw, DecodedInst* out);
 
 bool decode_inst_cbz_cbnz(uint32_t raw, DecodedInst* out);
 
+/* ---- B.cond label (B.EQ, B.NE, B.LT, B.GE …) ---- */
+bool decode_inst_bcond(uint32_t raw, DecodedInst* out);
+
 bool get_JUMP_target(DecodedInst* inst, int64_t instoff, int64_t* target);
 uint32_t change_rt(DecodedInst* inst, uint8_t new_rt);
+/* CBZ/CBNZ -> B，保留分支偏移 */
+uint32_t change_to_b(uint32_t raw);
 /* 解码优先级表 —— 按照编码空间重叠度排序 */
 DecodedInst decode_inst(uint32_t raw);
 
