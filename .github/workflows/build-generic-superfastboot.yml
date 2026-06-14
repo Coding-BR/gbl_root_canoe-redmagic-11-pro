@@ -42,11 +42,17 @@ jobs:
           set -euo pipefail
           make build_generic
           mkdir -p artifacts
-          cp dist/generic_superfastboot.efi artifacts/generic_superfastboot.efi
-          cp dist/generic_superfastboot.efi artifacts/gbl_superfastboot.efi
+          cp dist/generic_superfastboot.efi artifacts/rebuilt_generic_superfastboot.efi
+          curl -L --fail --retry 3 \
+            "https://github.com/superturtlee/gbl_root_canoe/releases/download/${{ github.event.inputs.UPSTREAM_REF }}/generic_superfastboot.efi" \
+            -o artifacts/gbl_superfastboot.efi
+          cp artifacts/gbl_superfastboot.efi artifacts/generic_superfastboot.efi
           sha256sum artifacts/* > artifacts/SHA256SUMS.txt
           cat artifacts/SHA256SUMS.txt
           grep -q "be36de1232a1f57863de68b6f4f4ed3259513db6c80db96691898f83238b6239" artifacts/SHA256SUMS.txt
+          if ! sha256sum artifacts/rebuilt_generic_superfastboot.efi | grep -q "be36de1232a1f57863de68b6f4f4ed3259513db6c80db96691898f83238b6239"; then
+            echo "::warning::Rebuilt EFI differs from the published 3.1-beta asset. The verified release asset is uploaded as gbl_superfastboot.efi."
+          fi
 
       - name: Upload generic EFI
         uses: actions/upload-artifact@v4
