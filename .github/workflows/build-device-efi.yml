@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y lld clang llvm uuid-dev liblzma-dev mingw-w64 zip curl p7zip-full
+          sudo apt-get install -y build-essential make ninja-build lld clang llvm gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu uuid-dev liblzma-dev libssl-dev nasm acpica-tools bc bison flex mingw-w64 zip curl p7zip-full
 
       - name: Build Linux toolkit
         run: |
@@ -50,10 +50,11 @@ jobs:
             mv "$ABL_FILE" "$TOOLKIT/images/abl.img"
           fi
           cd "$TOOLKIT"
-          chmod +x bin/extractfv bin/patch_abl build.sh
+          chmod +x bin/extractfv bin/patch_abl bin/elf_inject bin/GenFw build.sh
           ./build.sh
           mkdir -p "$GITHUB_WORKSPACE/artifacts"
-          cp ABL.efi "$GITHUB_WORKSPACE/artifacts/ABL_with_superfastboot.efi"
+          cp ABL_with_superfastboot.efi "$GITHUB_WORKSPACE/artifacts/ABL_with_superfastboot.efi"
+          cp ABL.efi "$GITHUB_WORKSPACE/artifacts/ABL_patched.efi"
           cp ABL_original.efi "$GITHUB_WORKSPACE/artifacts/ABL_original.efi"
           cp patch_log.txt "$GITHUB_WORKSPACE/artifacts/patch_log.txt"
           sha256sum "$GITHUB_WORKSPACE"/artifacts/* > "$GITHUB_WORKSPACE/artifacts/SHA256SUMS.txt"
