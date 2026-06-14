@@ -96,8 +96,8 @@ int32_t source_callback(char* buffer, int32_t size, int32_t now_offset, int8_t c
     #endif
     #ifndef DISABLE_PATCH_5
     int32_t fwd = track_forward_patch_strb(buffer, size, now_offset, current_target, anchor_offset);
-    if (fwd <= 0) {
-        printf("Warning: sink STRB not found after anchor 0x%X\n", anchor_offset);
+    if (fwd != SUCCESS) {
+        printf("Warning: sink STRB not patched after anchor 0x%X (result=%d)\n", anchor_offset, fwd);
         return -1;
     }
     printf("Sink patched successfully.\n");
@@ -209,7 +209,7 @@ bool PatchBuffer(char* data, int32_t size) {
 
     //oplus
     if (!patch_warning(data, size, global_var_offset)) {
-        printf("OPlus Warning: patch_warning failed\n");
+        printf("Optional warning patch skipped: warning strings not found\n");
     }
     #ifdef ENABLE_TESTING_PATCHS
     if (!patch_fastboot(data, size, global_var_offset)) {
