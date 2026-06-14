@@ -1,0 +1,55 @@
+name: Build Device GBL EFI
+
+on:
+  workflow_dispatch:
+    inputs:
+      ABL_URL:
+        description: Direct URL to the stock abl.img to patch
+        required: true
+      ARTIFACT_NAME:
+        description: Artifact name
+        default: redmagic-11-pro-gbl-efi
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-device-efi:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lld clang llvm uuid-dev liblzma-dev mingw-w64 zip curl
+
+      - name: Build Linux toolkit
+        run: |
+          make target_toolkit_linux
+
+      - name: Patch stock ABL into GBL EFI
+        run: |
+          set -euo pipefail
+          TOOLKIT="targets/toolkit_linux/build/toolkit"
+          mkdir -p "$TOOLKIT/images"
+          curl -L --fail --retry 3 \
+            "${{ github.event.inputs.ABL_URL }}" \
+            -o "$TOOLKIT/images/abl.img"
+          cd "$TOOLKIT"
+          chmod +x bin/extractfv bin/patch_abl build.sh
+          ./build.sh
+          mkdir -p "$GITHUB_WORKSPACE/artifacts"
+          cp ABL.efi "$GITHUB_WORKSPACE/artifacts/ABL_with_superfastboot.efi"
+          cp ABL_original.efi "$GITHUB_WORKSPACE/artifacts/ABL_original.efi"
+          cp patch_log.txt "$GITHUB_WORKSPACE/artifacts/patch_log.txt"
+          sha256sum "$GITHUB_WORKSPACE"/artifacts/* > "$GITHUB_WORKSPACE/artifacts/SHA256SUMS.txt"
+
+      - name: Upload patched EFI
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.inputs.ARTIFACT_NAME }}
+          path: artifacts/*
