@@ -30,7 +30,9 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential make ninja-build lld clang llvm gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu uuid-dev liblzma-dev libssl-dev nasm acpica-tools bc bison flex rsync
+          sudo apt-get install -y build-essential make ninja-build gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu uuid-dev liblzma-dev libssl-dev nasm acpica-tools bc bison flex rsync wget gpg
+          wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- 20
+          sudo apt-get install -y clang-20 lld-20 llvm-20
 
       - name: Prepare upstream build path
         run: |
@@ -48,6 +50,16 @@ jobs:
         working-directory: /home/wyb/gbl_root_canoe
         run: |
           set -euo pipefail
+          sudo ln -sf /usr/bin/clang-20 /usr/local/bin/clang
+          sudo ln -sf /usr/bin/clang++-20 /usr/local/bin/clang++
+          sudo ln -sf /usr/bin/lld-20 /usr/local/bin/lld
+          sudo ln -sf /usr/bin/ld.lld-20 /usr/local/bin/ld.lld
+          sudo ln -sf /usr/bin/llvm-ar-20 /usr/local/bin/llvm-ar
+          sudo ln -sf /usr/bin/llvm-objcopy-20 /usr/local/bin/llvm-objcopy
+          export PATH="/usr/local/bin:$PATH"
+          clang --version
+          ld.lld --version
+          llvm-ar --version
           make build_generic
           mkdir -p "$GITHUB_WORKSPACE/artifacts"
           cp dist/generic_superfastboot.efi "$GITHUB_WORKSPACE/artifacts/rebuilt_generic_superfastboot.efi"
