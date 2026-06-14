@@ -1,4 +1,4 @@
-Build/
+/Build/
 /Conf/
 *.log
 .DS_Store
