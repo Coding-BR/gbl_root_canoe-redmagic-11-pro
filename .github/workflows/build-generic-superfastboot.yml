@@ -60,6 +60,7 @@ jobs:
           clang --version
           ld.lld --version
           llvm-ar --version
+          sed -i 's#CLANG_BIN=/usr/bin/#CLANG_BIN=/usr/local/bin/#g' Makefile
           make build_generic
           mkdir -p "$GITHUB_WORKSPACE/artifacts"
           cp dist/generic_superfastboot.efi "$GITHUB_WORKSPACE/artifacts/rebuilt_generic_superfastboot.efi"
