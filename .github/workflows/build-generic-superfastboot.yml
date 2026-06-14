@@ -34,16 +34,16 @@ jobs:
 
       - name: Normalize EDK2 executable permissions
         run: |
-          chmod +x submodules/uefi/edk2/edksetup.sh
-          find submodules/uefi/edk2/BaseTools/BinWrappers/PosixLike -type f -exec chmod +x {} +
+          chmod +x edk2/edksetup.sh
+          find edk2/BaseTools/BinWrappers/PosixLike -type f -exec chmod +x {} +
 
       - name: Build generic SuperFastBoot EFI
         run: |
           set -euo pipefail
-          make target_generic_efi
+          make build_generic
           mkdir -p artifacts
-          cp targets/generic_efi/build/generic_superfastboot.efi artifacts/generic_superfastboot.efi
-          cp targets/generic_efi/build/generic_superfastboot.efi artifacts/gbl_superfastboot.efi
+          cp dist/generic_superfastboot.efi artifacts/generic_superfastboot.efi
+          cp dist/generic_superfastboot.efi artifacts/gbl_superfastboot.efi
           sha256sum artifacts/* > artifacts/SHA256SUMS.txt
           cat artifacts/SHA256SUMS.txt
           grep -q "be36de1232a1f57863de68b6f4f4ed3259513db6c80db96691898f83238b6239" artifacts/SHA256SUMS.txt
