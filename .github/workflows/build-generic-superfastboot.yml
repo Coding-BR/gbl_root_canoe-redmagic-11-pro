@@ -30,27 +30,35 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential make ninja-build lld clang llvm gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu uuid-dev liblzma-dev libssl-dev nasm acpica-tools bc bison flex
+          sudo apt-get install -y build-essential make ninja-build lld clang llvm gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu uuid-dev liblzma-dev libssl-dev nasm acpica-tools bc bison flex rsync
+
+      - name: Prepare upstream build path
+        run: |
+          sudo mkdir -p /home/wyb
+          sudo chown "$USER:$USER" /home/wyb
+          rsync -a --delete "$GITHUB_WORKSPACE/" /home/wyb/gbl_root_canoe/
 
       - name: Normalize EDK2 executable permissions
+        working-directory: /home/wyb/gbl_root_canoe
         run: |
           chmod +x edk2/edksetup.sh
           find edk2/BaseTools/BinWrappers/PosixLike -type f -exec chmod +x {} +
 
       - name: Build generic SuperFastBoot EFI
+        working-directory: /home/wyb/gbl_root_canoe
         run: |
           set -euo pipefail
           make build_generic
-          mkdir -p artifacts
-          cp dist/generic_superfastboot.efi artifacts/rebuilt_generic_superfastboot.efi
+          mkdir -p "$GITHUB_WORKSPACE/artifacts"
+          cp dist/generic_superfastboot.efi "$GITHUB_WORKSPACE/artifacts/rebuilt_generic_superfastboot.efi"
           curl -L --fail --retry 3 \
             "https://github.com/superturtlee/gbl_root_canoe/releases/download/${{ github.event.inputs.UPSTREAM_REF }}/generic_superfastboot.efi" \
-            -o artifacts/gbl_superfastboot.efi
-          cp artifacts/gbl_superfastboot.efi artifacts/generic_superfastboot.efi
-          sha256sum artifacts/* > artifacts/SHA256SUMS.txt
-          cat artifacts/SHA256SUMS.txt
-          grep -q "be36de1232a1f57863de68b6f4f4ed3259513db6c80db96691898f83238b6239" artifacts/SHA256SUMS.txt
-          if ! sha256sum artifacts/rebuilt_generic_superfastboot.efi | grep -q "be36de1232a1f57863de68b6f4f4ed3259513db6c80db96691898f83238b6239"; then
+            -o "$GITHUB_WORKSPACE/artifacts/gbl_superfastboot.efi"
+          cp "$GITHUB_WORKSPACE/artifacts/gbl_superfastboot.efi" "$GITHUB_WORKSPACE/artifacts/generic_superfastboot.efi"
+          sha256sum "$GITHUB_WORKSPACE"/artifacts/* > "$GITHUB_WORKSPACE/artifacts/SHA256SUMS.txt"
+          cat "$GITHUB_WORKSPACE/artifacts/SHA256SUMS.txt"
+          grep -q "be36de1232a1f57863de68b6f4f4ed3259513db6c80db96691898f83238b6239" "$GITHUB_WORKSPACE/artifacts/SHA256SUMS.txt"
+          if ! sha256sum "$GITHUB_WORKSPACE/artifacts/rebuilt_generic_superfastboot.efi" | grep -q "be36de1232a1f57863de68b6f4f4ed3259513db6c80db96691898f83238b6239"; then
             echo "::warning::Rebuilt EFI differs from the published 3.1-beta asset. The verified release asset is uploaded as gbl_superfastboot.efi."
           fi
 
