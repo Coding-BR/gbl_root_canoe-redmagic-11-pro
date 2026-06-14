@@ -41,10 +41,13 @@ jobs:
               "${{ github.event.inputs.ABL_URL }}" \
               -o "$TOOLKIT/images/abl.img"
           else
+            TMP_ABL="$(mktemp -d)"
             7z x "$GITHUB_WORKSPACE/device_blobs/abl_b.7z" \
               -p"${{ secrets.ABL_BLOB_PASSWORD }}" \
-              -o"$TOOLKIT/images"
-            mv "$TOOLKIT/images/abl_b.img" "$TOOLKIT/images/abl.img"
+              -o"$TMP_ABL"
+            ABL_FILE="$(find "$TMP_ABL" -type f -name 'abl_b.img' | head -n 1)"
+            test -n "$ABL_FILE"
+            mv "$ABL_FILE" "$TOOLKIT/images/abl.img"
           fi
           cd "$TOOLKIT"
           chmod +x bin/extractfv bin/patch_abl build.sh
