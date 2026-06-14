@@ -147,6 +147,12 @@ int32_t track_forward(char* buffer, int32_t size, int32_t start_offset,
     LocSet set;
     set.count = 0;
     locset_add_reg(&set, src_reg);
+    bool cmp_depends_on_tracked_value = false;
+    DecodedInst anchor_source = decode_at(buffer, ancher_offset - 4);
+    if (anchor_source.type == INST_LDR_X_IMM && anchor_source.rn == 31) {
+        locset_add_stk64(&set, anchor_source.imm);
+        printf("Seeded anchor stack source [SP+0x%X]/64\n", anchor_source.imm);
+    }
 
     printf("\n=== Forward tracking from LDRB@0x%X (W%d), anchor=0x%X ===\n",
            start_offset, (int)src_reg, ancher_offset);
@@ -161,6 +167,27 @@ int32_t track_forward(char* buffer, int32_t size, int32_t start_offset,
         }
 
         switch (d.type) {
+        case INST_CMP_W_IMM:
+            cmp_depends_on_tracked_value = locset_has_reg(&set, (int8_t)d.rn);
+            if (cmp_depends_on_tracked_value) {
+                printf("  0x%X: CMP W%d,#0x%X tracks flags\n", off, d.rn, d.imm);
+            }
+            break;
+
+        case INST_CSET_W:
+            if (cmp_depends_on_tracked_value && d.rt != 31) {
+                int32_t cb_result = callback(buffer, size, off, d, ancher_offset);
+                if (cb_result!=NEED_MORE) return cb_result;
+                printf("  0x%X: CSET W%d,cond propagates tracked flags\n", off, d.rt);
+                locset_add_reg(&set, (int8_t)d.rt);
+                locset_print(&set);
+            } else if (locset_has_reg(&set, (int8_t)d.rt)) {
+                printf("  0x%X: CSET W%d,cond overwrite -> del\n", off, d.rt);
+                locset_del_reg(&set, (int8_t)d.rt);
+                locset_print(&set);
+            }
+            cmp_depends_on_tracked_value = false;
+            break;
 
         /* ---- STR Xt, [SP, #imm] 64-bit spill ---- */
         case INST_STR_X_IMM:
@@ -171,7 +198,7 @@ int32_t track_forward(char* buffer, int32_t size, int32_t start_offset,
                     printf("  0x%X: STR X%d,[SP,#0x%X] spill64\n", off, d.rt, d.imm);
                     locset_add_stk64(&set, d.imm);
                     locset_print(&set);
-                } else if (locset_has_stk64(&set, d.imm)) {
+                } else if (locset_has_stk64(&set, d.imm) && off > ancher_offset) {
                     printf("  0x%X: STR X%d,[SP,#0x%X] overwrite stk64 -> del\n", off, d.rt, d.imm);
                     locset_del_stk64(&set, d.imm);
                     locset_print(&set);
@@ -196,6 +223,30 @@ int32_t track_forward(char* buffer, int32_t size, int32_t start_offset,
             }
             break;
 
+        /* ---- LDP Xt1, Xt2, [SP, #imm] 64-bit pair reload ---- */
+        case INST_LDP_X_IMM:
+            if (d.rn == 31) {
+                bool printed = false;
+                if (locset_has_stk64(&set, d.imm)) {
+                    int32_t cb_result = callback(buffer, size, off, d, ancher_offset);
+                    if (cb_result!=NEED_MORE) return cb_result;
+                    printf("  0x%X: LDP X%d,X%d,[SP,#0x%X] reload first\n",
+                           off, d.rt, d.rt2, d.imm);
+                    locset_add_reg(&set, (int8_t)d.rt);
+                    printed = true;
+                }
+                if (locset_has_stk64(&set, d.imm + 8)) {
+                    int32_t cb_result = callback(buffer, size, off, d, ancher_offset);
+                    if (cb_result!=NEED_MORE) return cb_result;
+                    printf("  0x%X: LDP X%d,X%d,[SP,#0x%X] reload second\n",
+                           off, d.rt, d.rt2, d.imm);
+                    locset_add_reg(&set, (int8_t)d.rt2);
+                    printed = true;
+                }
+                if (printed) locset_print(&set);
+            }
+            break;
+
         /* ---- STR Wt, [SP, #imm] 32-bit spill ---- */
         case INST_STR_W_IMM:
             if (d.rn == 31) {
@@ -205,7 +256,7 @@ int32_t track_forward(char* buffer, int32_t size, int32_t start_offset,
                     printf("  0x%X: STR W%d,[SP,#0x%X] spill32\n", off, d.rt, d.imm);
                     locset_add_stk64(&set, d.imm);
                     locset_print(&set);
-                } else if (locset_has_stk64(&set, d.imm)) {
+                } else if (locset_has_stk64(&set, d.imm) && off > ancher_offset) {
                     printf("  0x%X: STR W%d,[SP,#0x%X] overwrite stk -> del\n", off, d.rt, d.imm);
                     locset_del_stk64(&set, d.imm);
                     locset_print(&set);
@@ -265,7 +316,7 @@ int32_t track_forward(char* buffer, int32_t size, int32_t start_offset,
         case INST_STRB_POST:
         case INST_STRB_PRE: {
             StrbInfo si = decode_any_strb(d.raw);
-            if (si.valid && (locset_has_reg(&set, (int8_t)si.rt)||(locset_empty(&set)&&off > ancher_offset))) {
+            if (si.valid && locset_has_reg(&set, (int8_t)si.rt)) {
                 //typedef int32_t (*ForwardCallback)(char* buffer, int32_t size, int32_t now_offset, DecodedInst d, int32_t ancher_offset);
                 int32_t cb_result = callback(buffer, size, off, d, ancher_offset);
                 if (cb_result!=NEED_MORE) return cb_result;
@@ -274,7 +325,7 @@ int32_t track_forward(char* buffer, int32_t size, int32_t start_offset,
                 if (si.rn == 31) locset_add_stk8(&set, si.imm);
                 locset_print(&set);
                 
-            } else if (si.valid && si.rn == 31 && locset_has_stk8(&set, si.imm)) {
+            } else if (si.valid && si.rn == 31 && locset_has_stk8(&set, si.imm) && off > ancher_offset) {
                 printf("  0x%X: STRB W%d,[SP,#0x%X] overwrite stk8 -> del\n",
                        off, si.rt, si.imm);
                 locset_del_stk8(&set, si.imm);

@@ -6,6 +6,7 @@ const DecodeFunc g_decoders[] = {
     decode_inst_add_x_imm,
     decode_inst_ldr_x_imm,
     decode_inst_str_x_imm,
+    decode_inst_ldp_x_imm,
     decode_inst_ldr_w_imm,
     decode_inst_str_w_imm,
     decode_inst_ldrb_imm,
@@ -16,6 +17,7 @@ const DecodeFunc g_decoders[] = {
     decode_inst_mov_w,
     decode_inst_movz_w,
     decode_inst_cmp_w_imm,
+    decode_inst_cset_w,
     decode_inst_ubfm_w,
     decode_inst_cbz_cbnz,
     decode_inst_bcond,
@@ -112,6 +114,22 @@ bool decode_inst_str_x_imm(uint32_t raw, DecodedInst* out) {
     out->rt   = raw & 0x1F;
     out->rn   = (raw >> 5) & 0x1F;
     out->imm  = ((raw >> 10) & 0xFFF) << 3;
+    return true;
+}
+
+/* ---- LDP Xt1, Xt2, [Xn, #imm] signed offset ---- */
+bool decode_inst_ldp_x_imm(uint32_t raw, DecodedInst* out) {
+    if ((raw & 0xFFC00000) != 0xA9400000) return false;
+    out->type = INST_LDP_X_IMM;
+    out->raw  = raw;
+    out->rt   = raw & 0x1F;
+    out->rn   = (raw >> 5) & 0x1F;
+    out->rt2  = (raw >> 10) & 0x1F;
+
+    int32_t imm7 = (raw >> 15) & 0x7F;
+    if (imm7 & 0x40) imm7 |= ~0x7F;
+    out->simm = imm7 << 3;
+    out->imm  = (uint32_t)out->simm;
     return true;
 }
 
@@ -217,6 +235,25 @@ bool decode_inst_cmp_w_imm(uint32_t raw, DecodedInst* out) {
     out->rn   = (raw >> 5) & 0x1F;
     out->imm  = (raw >> 10) & 0xFFF;
     out->rt   = 31; /* WZR */
+    return true;
+}
+
+/* ---- CSET Wd, cond  (CSINC Wd, WZR, WZR, inverse cond) ---- */
+bool decode_inst_cset_w(uint32_t raw, DecodedInst* out) {
+    /*
+     * CSET Wd, cond is encoded as CSINC Wd, WZR, WZR, !cond:
+     *   sf=0, op=0, S=0, fixed bits 0x1A800000, Rn=Rm=WZR.
+     */
+    if ((raw & 0xFFE00C00) != 0x1A800400) return false;
+    if (((raw >> 5) & 0x1F) != 31) return false;
+    if (((raw >> 16) & 0x1F) != 31) return false;
+
+    out->type = INST_CSET_W;
+    out->raw  = raw;
+    out->rt   = raw & 0x1F;
+    out->rn   = 31;
+    out->rm   = 31;
+    out->cond = ((raw >> 12) & 0xF) ^ 1;
     return true;
 }
 

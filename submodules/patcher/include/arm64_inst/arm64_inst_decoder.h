@@ -19,6 +19,7 @@ typedef enum {
     /* loads / stores - 64-bit */
     INST_LDR_X_IMM,         /* LDR Xt, [Xn, #imm]          unsigned offset */
     INST_STR_X_IMM,         /* STR Xt, [Xn, #imm]          unsigned offset */
+    INST_LDP_X_IMM,         /* LDP Xt1, Xt2, [Xn, #imm]    signed offset */
 
     /* moves */
     INST_MOV_X,             /* MOV Xd, Xm   (ORR Xd, XZR, Xm) */
@@ -49,6 +50,7 @@ typedef struct {
     InstType type;
     uint32_t raw;       /* 原始 32-bit 编码 */
     uint8_t    rt;        /* destination / transfer register (Rd/Rt) */
+    uint8_t    rt2;       /* second transfer register for pair ops     */
     uint8_t    rn;        /* first source / base register            */
     uint8_t    rm;        /* second source (move / shift)            */
     uint32_t   imm;       /* decoded unsigned immediate               */
@@ -82,6 +84,9 @@ bool decode_inst_ldr_x_imm(uint32_t raw, DecodedInst* out);
 /* ---- STR Xt, [Xn, #imm] 64-bit unsigned offset ---- */
 bool decode_inst_str_x_imm(uint32_t raw, DecodedInst* out);
 
+/* ---- LDP Xt1, Xt2, [Xn, #imm] signed offset ---- */
+bool decode_inst_ldp_x_imm(uint32_t raw, DecodedInst* out);
+
 /* ---- LDR Wt, [Xn, #imm] 32-bit unsigned offset ---- */
 bool decode_inst_ldr_w_imm(uint32_t raw, DecodedInst* out);
 
@@ -108,6 +113,9 @@ bool decode_inst_paciasp(uint32_t raw, DecodedInst* out);
 
 /* ---- CMP Wn, #imm  (SUBS WZR, Wn, #imm) ---- */
 bool decode_inst_cmp_w_imm(uint32_t raw, DecodedInst* out);
+
+/* ---- CSET Wd, cond  (CSINC Wd, WZR, WZR, inverse cond) ---- */
+bool decode_inst_cset_w(uint32_t raw, DecodedInst* out);
 
 /* ---- UBFM Wd, Wn, #immr, #imms ---- */
 bool decode_inst_ubfm_w(uint32_t raw, DecodedInst* out);

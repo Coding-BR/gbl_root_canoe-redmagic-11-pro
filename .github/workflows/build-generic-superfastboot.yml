@@ -3,10 +3,6 @@ name: Build Generic SuperFastBoot EFI
 on:
   workflow_dispatch:
     inputs:
-      UPSTREAM_REF:
-        description: Upstream gbl_root_canoe ref to build
-        default: 3.1-beta
-        required: true
       ARTIFACT_NAME:
         description: Artifact name
         default: redmagic-11-pro-generic-superfastboot-efi
@@ -20,12 +16,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out upstream source
+      - name: Check out source
         uses: actions/checkout@v4
-        with:
-          repository: superturtlee/gbl_root_canoe
-          ref: ${{ github.event.inputs.UPSTREAM_REF }}
-          submodules: recursive
 
       - name: Install dependencies
         run: |
@@ -43,8 +35,8 @@ jobs:
       - name: Normalize EDK2 executable permissions
         working-directory: /home/wyb/gbl_root_canoe
         run: |
-          chmod +x edk2/edksetup.sh
-          find edk2/BaseTools/BinWrappers/PosixLike -type f -exec chmod +x {} +
+          chmod +x submodules/uefi/edk2/edksetup.sh
+          find submodules/uefi/edk2/BaseTools/BinWrappers/PosixLike -type f -exec chmod +x {} +
 
       - name: Build generic SuperFastBoot EFI
         working-directory: /home/wyb/gbl_root_canoe
@@ -60,20 +52,14 @@ jobs:
           clang --version
           ld.lld --version
           llvm-ar --version
-          sed -i 's#CLANG_BIN=/usr/bin/#CLANG_BIN=/usr/local/bin/#g' Makefile
-          make build_generic
+          sed -i 's#CLANG_BIN=/usr/bin/#CLANG_BIN=/usr/local/bin/#g' submodules/uefi/Makefile
+          make target_generic_efi
           mkdir -p "$GITHUB_WORKSPACE/artifacts"
-          cp dist/generic_superfastboot.efi "$GITHUB_WORKSPACE/artifacts/rebuilt_generic_superfastboot.efi"
-          curl -L --fail --retry 3 \
-            "https://github.com/superturtlee/gbl_root_canoe/releases/download/${{ github.event.inputs.UPSTREAM_REF }}/generic_superfastboot.efi" \
-            -o "$GITHUB_WORKSPACE/artifacts/gbl_superfastboot.efi"
-          cp "$GITHUB_WORKSPACE/artifacts/gbl_superfastboot.efi" "$GITHUB_WORKSPACE/artifacts/generic_superfastboot.efi"
+          cp targets/generic_efi/build/generic_superfastboot.efi "$GITHUB_WORKSPACE/artifacts/gbl_superfastboot.efi"
+          cp targets/generic_efi/build/generic_superfastboot.efi "$GITHUB_WORKSPACE/artifacts/generic_superfastboot.efi"
+          cp targets/generic_efi/build/generic_superfastboot.efi "$GITHUB_WORKSPACE/artifacts/rebuilt_generic_superfastboot.efi"
           sha256sum "$GITHUB_WORKSPACE"/artifacts/* > "$GITHUB_WORKSPACE/artifacts/SHA256SUMS.txt"
           cat "$GITHUB_WORKSPACE/artifacts/SHA256SUMS.txt"
-          grep -q "be36de1232a1f57863de68b6f4f4ed3259513db6c80db96691898f83238b6239" "$GITHUB_WORKSPACE/artifacts/SHA256SUMS.txt"
-          if ! sha256sum "$GITHUB_WORKSPACE/artifacts/rebuilt_generic_superfastboot.efi" | grep -q "be36de1232a1f57863de68b6f4f4ed3259513db6c80db96691898f83238b6239"; then
-            echo "::warning::Rebuilt EFI differs from the published 3.1-beta asset. The verified release asset is uploaded as gbl_superfastboot.efi."
-          fi
 
       - name: Upload generic EFI
         uses: actions/upload-artifact@v4
