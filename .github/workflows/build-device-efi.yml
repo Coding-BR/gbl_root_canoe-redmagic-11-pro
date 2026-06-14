@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       ABL_URL:
-        description: Direct URL to the stock abl.img to patch
-        required: true
+        description: Optional direct URL to stock abl.img. Leave empty to use encrypted device_blobs/abl_b.7z
+        required: false
       ARTIFACT_NAME:
         description: Artifact name
         default: redmagic-11-pro-gbl-efi
@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y lld clang llvm uuid-dev liblzma-dev mingw-w64 zip curl
+          sudo apt-get install -y lld clang llvm uuid-dev liblzma-dev mingw-w64 zip curl p7zip-full
 
       - name: Build Linux toolkit
         run: |
@@ -36,9 +36,16 @@ jobs:
           set -euo pipefail
           TOOLKIT="targets/toolkit_linux/build/toolkit"
           mkdir -p "$TOOLKIT/images"
-          curl -L --fail --retry 3 \
-            "${{ github.event.inputs.ABL_URL }}" \
-            -o "$TOOLKIT/images/abl.img"
+          if [ -n "${{ github.event.inputs.ABL_URL }}" ]; then
+            curl -L --fail --retry 3 \
+              "${{ github.event.inputs.ABL_URL }}" \
+              -o "$TOOLKIT/images/abl.img"
+          else
+            7z x "$GITHUB_WORKSPACE/device_blobs/abl_b.7z" \
+              -p"${{ secrets.ABL_BLOB_PASSWORD }}" \
+              -o"$TOOLKIT/images"
+            mv "$TOOLKIT/images/abl_b.img" "$TOOLKIT/images/abl.img"
+          fi
           cd "$TOOLKIT"
           chmod +x bin/extractfv bin/patch_abl build.sh
           ./build.sh
