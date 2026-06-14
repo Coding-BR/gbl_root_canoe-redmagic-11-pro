@@ -858,7 +858,7 @@ LoadAblFromPartition (CHAR8 **OutBuffer, UINT32 *OutSize)
 #ifndef UEFI
 #define UEFI
 #endif
-#include "../../../../../patcher/patchlib.h"
+#include "../../../../../../patcher/patchlib.h"
 #endif
 STATIC VOID LoadIntegratedEfi(VOID){
 #ifndef AUTO_PATCH_ABL
