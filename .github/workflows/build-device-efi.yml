@@ -27,6 +27,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential make ninja-build lld clang llvm gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu uuid-dev liblzma-dev libssl-dev nasm acpica-tools bc bison flex mingw-w64 zip curl p7zip-full
 
+      - name: Normalize EDK2 executable permissions
+        run: |
+          chmod +x submodules/uefi/edk2/edksetup.sh
+          find submodules/uefi/edk2/BaseTools/BinWrappers/PosixLike -type f -exec chmod +x {} +
+
       - name: Build Linux toolkit
         run: |
           make target_toolkit_linux
