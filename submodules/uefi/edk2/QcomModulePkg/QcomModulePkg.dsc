@@ -182,6 +182,7 @@
   !endif
   !if $(AUTO_PATCH_ABL) == 1
       GCC:*_*_*_CC_FLAGS = -DAUTO_PATCH_ABL
+      GCC:*_*_*_CC_FLAGS = -Wno-unused-function
   !endif
   !if $(DISABLE_PRINT) == 1
       GCC:*_*_*_CC_FLAGS = -DDISABLE_PRINT
