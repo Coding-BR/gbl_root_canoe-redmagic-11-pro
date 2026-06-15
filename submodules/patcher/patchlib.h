@@ -43,8 +43,6 @@ static void locset_del_reg  (LocSet* s, INT8 r)   { locset_del(s, (DataLoc){LOC_
 static void locset_del_stk64(LocSet* s, UINT32 v) { locset_del(s, (DataLoc){LOC_STK64, (INT32)v}); }
 static void locset_del_stk8 (LocSet* s, UINT32 v) { locset_del(s, (DataLoc){LOC_STK8, (INT32)v}); }
 
-static BOOLEAN locset_empty(const LocSet* s) { return s->count == 0; }
-
 static void locset_print(const LocSet* s) {
     if (s->count == 0) {
         Print_patcher("  LocSet{}\n");
