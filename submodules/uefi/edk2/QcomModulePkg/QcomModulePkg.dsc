@@ -183,8 +183,26 @@
   !if $(AUTO_PATCH_ABL) == 1
       GCC:*_*_*_CC_FLAGS = -DAUTO_PATCH_ABL
   !endif
-    !if $(DISABLE_PRINT) == 1
+  !if $(DISABLE_PRINT) == 1
       GCC:*_*_*_CC_FLAGS = -DDISABLE_PRINT
+  !endif
+  !if $(DISABLE_PATCH_1) == 1
+      GCC:*_*_*_CC_FLAGS = -DDISABLE_PATCH_1
+  !endif
+  !if $(DISABLE_PATCH_2) == 1
+      GCC:*_*_*_CC_FLAGS = -DDISABLE_PATCH_2
+  !endif
+  !if $(DISABLE_PATCH_3) == 1
+      GCC:*_*_*_CC_FLAGS = -DDISABLE_PATCH_3
+  !endif
+  !if $(DISABLE_PATCH_4) == 1
+      GCC:*_*_*_CC_FLAGS = -DDISABLE_PATCH_4
+  !endif
+  !if $(DISABLE_PATCH_5) == 1
+      GCC:*_*_*_CC_FLAGS = -DDISABLE_PATCH_5
+  !endif
+  !if $(DISABLE_PATCH_6) == 1
+      GCC:*_*_*_CC_FLAGS = -DDISABLE_PATCH_6
   !endif
   !if $(WEAR_OS)
       GCC:*_*_*_CC_FLAGS = -DWEAR_OS
