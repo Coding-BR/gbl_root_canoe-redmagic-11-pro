@@ -7,6 +7,10 @@ on:
         description: Artifact name
         default: redmagic-11-pro-generic-superfastboot-efi
         required: true
+      PATCHER_DEFINES:
+        description: Extra patcher defines, for example 'DISABLE_PATCH_1=1 DISABLE_PATCH_2=1'
+        default: ''
+        required: false
 
 permissions:
   contents: read
@@ -53,7 +57,7 @@ jobs:
           ld.lld --version
           llvm-ar --version
           sed -i 's#CLANG_BIN=/usr/bin/#CLANG_BIN=/usr/local/bin/#g' submodules/uefi/Makefile
-          make target_generic_efi
+          make target_generic_efi GENERIC_PATCHER_DEFINES="${{ github.event.inputs.PATCHER_DEFINES }}"
           mkdir -p "$GITHUB_WORKSPACE/artifacts"
           cp targets/generic_efi/build/generic_superfastboot.efi "$GITHUB_WORKSPACE/artifacts/gbl_superfastboot.efi"
           cp targets/generic_efi/build/generic_superfastboot.efi "$GITHUB_WORKSPACE/artifacts/generic_superfastboot.efi"
