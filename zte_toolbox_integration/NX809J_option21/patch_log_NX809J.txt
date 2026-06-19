@@ -1,0 +1,101 @@
+Found ADRL triple at 0x24180:
+  [0x24180] ADRP+ADD X9 -> file:0x5FE18 "unlocked"
+  [0x24188] ADRP+ADD X10 -> file:0x54A20 "locked"
+  Patch pair-0: ADRP F00001C9->90000189, ADD 91386129->91288129
+ADRL patch applied: 1 location(s)
+Anchor offset : 0x15E2C
+Lock register : W8
+Boot patches: 1
+Bounce at 0x15E28: LDR X8,[SP,#0x20]
+  -> STR X21,[SP,#0x20] at 0x146E4
+Found source LDRB at 0x14494: LDRB W21,[X27,#0xE55](1 bounces)
+  Before: 75 57 79 39
+  After : 35 00 80 52 (MOV W21, #1)
+Seeded anchor stack source [SP+0x20]/64
+
+=== Forward tracking from LDRB@0x14494 (W21), anchor=0x15E2C ===
+  LocSet{W21, [SP+0x20]/64}
+  0x144A8: CMP W21,#0x0 tracks flags
+  0x144B4: CSET W26,cond propagates tracked flags
+  LocSet{W21, [SP+0x20]/64, W26}
+  0x145D0: MOV X3,X21 propagate
+  LocSet{W21, [SP+0x20]/64, W26, W3}
+  0x14634: MOV X21,X0 overwrite -> del
+  LocSet{W3, [SP+0x20]/64, W26}
+  0x14984: MOV X3,X21 overwrite -> del
+  LocSet{W26, [SP+0x20]/64}
+  0x14C30: MOV W4,W26 propagate
+  LocSet{W26, [SP+0x20]/64, W4}
+  0x14D0C: MOV X4,X23 overwrite -> del
+  LocSet{W26, [SP+0x20]/64}
+  0x15198: LDR X8,[SP,#0x20] reload64
+  LocSet{W26, [SP+0x20]/64, W8}
+  0x15248: MOV X26,X21 overwrite -> del
+  LocSet{W8, [SP+0x20]/64}
+  0x15324: CMP W8,#0x0 tracks flags
+  0x1534C: LDR X8,[SP,#0x20] reload64
+  LocSet{W8, [SP+0x20]/64}
+  0x15464: LDR X21,[SP,#0x20] reload64
+  LocSet{W8, [SP+0x20]/64, W21}
+  0x15490: CMP W8,#0x1 tracks flags
+  0x154B4: CMP W8,#0x4 tracks flags
+  0x15508: MOV X0,X8 propagate
+  LocSet{W8, [SP+0x20]/64, W21, W0}
+  0x15528: MOV X23,X0 propagate
+  LocSet{W8, [SP+0x20]/64, W21, W0, W23}
+  0x15574: MOV X21,X26 overwrite -> del
+  LocSet{W8, [SP+0x20]/64, W23, W0}
+  0x1558C: MOV X2,X23 propagate
+  LocSet{W8, [SP+0x20]/64, W23, W0, W2}
+  0x155B0: LDR X0,[SP,#0x28] overwrite reg -> del
+  LocSet{W8, [SP+0x20]/64, W23, W2}
+  0x155E0: MOV X2,X26 overwrite -> del
+  LocSet{W8, [SP+0x20]/64, W23}
+  0x15620: LDR X21,[SP,#0x20] reload64
+  LocSet{W8, [SP+0x20]/64, W23, W21}
+  0x15640: CMP W8,#0x3 tracks flags
+  0x157E4: CMP W8,#0x3 tracks flags
+  0x15820: MOV W3,W23 propagate
+  LocSet{W8, [SP+0x20]/64, W23, W21, W3}
+  0x15838: LDR X21,[SP,#0x20] reload64
+  LocSet{W8, [SP+0x20]/64, W23, W21, W3}
+  0x15850: STR X23,[SP,#0x10] spill64
+  LocSet{W8, [SP+0x20]/64, W23, W21, W3, [SP+0x10]/64}
+  0x158C8: MOV X3,X0 overwrite -> del
+  LocSet{W8, [SP+0x20]/64, W23, W21, [SP+0x10]/64}
+  0x158D8: MOV X2,X23 propagate
+  LocSet{W8, [SP+0x20]/64, W23, W21, [SP+0x10]/64, W2}
+  0x15900: MOV X23,X31 overwrite -> del
+  LocSet{W8, [SP+0x20]/64, W2, W21, [SP+0x10]/64}
+  0x15914: STR X8,[SP,#0x8] spill64
+  LocSet{W8, [SP+0x20]/64, W2, W21, [SP+0x10]/64, [SP+0x8]/64}
+  0x15918: LDR X8,[SP,#0x10] reload64
+  LocSet{W8, [SP+0x20]/64, W2, W21, [SP+0x10]/64, [SP+0x8]/64}
+  0x15938: MOV X21,X31 overwrite -> del
+  LocSet{W8, [SP+0x20]/64, W2, [SP+0x8]/64, [SP+0x10]/64}
+  0x15980: MOV X2,X0 overwrite -> del
+  LocSet{W8, [SP+0x20]/64, [SP+0x10]/64, [SP+0x8]/64}
+  0x159C0: LDR X12,[SP,#0x8] reload64
+  LocSet{W8, [SP+0x20]/64, [SP+0x10]/64, [SP+0x8]/64, W12}
+  0x15A18: LDR X3,[SP,#0x10] reload64
+  LocSet{W8, [SP+0x20]/64, [SP+0x10]/64, [SP+0x8]/64, W12, W3}
+  0x15A54: LDR X8,[SP,#0x20] reload64
+  LocSet{W8, [SP+0x20]/64, [SP+0x10]/64, [SP+0x8]/64, W12, W3}
+  0x15B18: LDR X8,[SP,#0x18] overwrite reg -> del
+  LocSet{W3, [SP+0x20]/64, [SP+0x10]/64, [SP+0x8]/64, W12}
+  0x15DF4: LDR W3,[SP,#0x90] overwrite reg -> del
+  LocSet{W12, [SP+0x20]/64, [SP+0x10]/64, [SP+0x8]/64}
+  0x15E28: LDR X8,[SP,#0x20] reload64
+  LocSet{W12, [SP+0x20]/64, [SP+0x10]/64, [SP+0x8]/64, W8}
+  0x15E38: LDR X8,[SP,#0x28] overwrite reg -> del
+  LocSet{W12, [SP+0x20]/64, [SP+0x10]/64, [SP+0x8]/64}
+  0x15E90: LDP X11,X10,[SP,#0x20] reload first
+  LocSet{W12, [SP+0x20]/64, [SP+0x10]/64, [SP+0x8]/64, W11}
+  0x15EB4: STRB W11,[SP,#0x60] ** SINK (after anchor0x15E2C) **
+  Before: EB 83 01 39
+  After : FF 83 01 39 (Rt -> WZR)
+Sink patched successfully.
+Global variable offset (for warning patch): 0xE55
+Warning not found
+Optional warning patch skipped: warning strings not found
+Saved to ./ABL.efi
